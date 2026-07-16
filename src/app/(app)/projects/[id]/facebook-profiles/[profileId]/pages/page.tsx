@@ -262,55 +262,66 @@ export default function FacebookPagesList() {
                             <th className="px-4 py-3 text-right font-semibold">Ações</th>
                         </tr>
                         </thead>
-                        <tbody className="bg-gray-800 divide-y divide-gray-700">
-                        {paginated.map((page) => (
-                            <tr key={page.id} className={`transition-colors ${selectedIds.has(page.id) ? 'bg-blue-900/20' : 'hover:bg-gray-900/50'}`}>
-                                <td className="p-4">
-                                    <input type="checkbox" checked={selectedIds.has(page.id)} onChange={(e) => handleSelectOne(page.id, e.target.checked)} className="h-4 w-4 rounded bg-gray-900 border-gray-600 text-blue-500 focus:ring-blue-600"/>
-                                </td>
-                                <td onClick={() => setSelectedPage(page)} className="px-4 py-3 flex items-center gap-3 cursor-pointer">
-                                    <Image src={`https://graph.facebook.com/${page.pageId}/picture?type=square`} alt={page.name} width={40} height={40} className="rounded-md"/>
-                                    <div>
-                                        <div className="text-white font-medium">{page.name}</div>
-                                        <div className="text-gray-400 text-xs">{page.pageEmail ?? 'Sem e-mail'}</div>
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                    {page.status === 'enabled' ? (
-                                        <div className="flex items-center gap-2 text-green-400"><span className="h-2 w-2 rounded-full bg-green-500"></span>Habilitado</div>
-                                    ) : (
-                                        <div className="flex items-center gap-2 text-red-400"><span className="h-2 w-2 rounded-full bg-red-500"></span>Desabilitado</div>
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-gray-200 text-center">
-                                    <span className="font-semibold">{page.currentLeadCount - page.currentUnsubscribedLeadCount}</span>
-                                    <span className="text-gray-500"> / {page.currentLeadCount}</span>
-                                </td>
-                                <td className="px-4 py-3 text-gray-200 text-center font-semibold">{page.leadCountLast24h}</td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                router.push(`/projects/${id}/facebook-profiles/${profileId}/pages/${page.id}/inbox`)
-                                            }}
-                                            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-                                        >
-                                            <MessageSquare size={14} />
-                                            Inbox
-                                        </button>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleStatusToggle(page);
-                                            }}
-                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${page.status === 'enabled' ? 'bg-blue-600' : 'bg-gray-600'}`}
-                                        >
-                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${page.status === 'enabled' ? 'translate-x-5' : 'translate-x-0'}`}/>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                    <tbody className="bg-gray-800 divide-y divide-gray-700">
+{paginated.map((page) => (
+    <tr key={page.id} className={`transition-colors ${selectedIds.has(page.id) ? 'bg-blue-900/20' : 'hover:bg-gray-900/50'}`}>
+        <td className="p-4">
+            <input type="checkbox" checked={selectedIds.has(page.id)} onChange={(e) => handleSelectOne(page.id, e.target.checked)} className="h-4 w-4 rounded bg-gray-900 border-gray-600 text-blue-500 focus:ring-blue-600"/>
+        </td>
+        
+        {/* FOTO E NOME DO LEAD (Agora com foto dinâmica do Graph API) */}
+        <td onClick={() => setSelectedPage(page)} className="px-4 py-3 cursor-pointer">
+            <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 shrink-0">
+                    <Image 
+                        src={`https://graph.facebook.com/${page.pageId}/picture?type=square`} 
+                        alt={page.name} 
+                        fill
+                        className="rounded-full object-cover border border-gray-600"
+                    />
+                </div>
+                <div className="min-w-0">
+                    <div className="text-white font-medium truncate w-32 sm:w-48">{page.name}</div>
+                    <div className="text-gray-400 text-xs truncate w-32 sm:w-48">{page.pageEmail ?? 'Sem e-mail'}</div>
+                </div>
+            </div>
+        </td>
+
+        {/* MENSAGEM CENTRALIZADA (Destaque para o conteúdo) */}
+        <td className="px-4 py-3 text-center min-w-[200px]">
+            <div className="inline-block max-w-[300px] bg-gray-700/50 rounded-lg px-3 py-2 text-sm text-gray-200 italic border border-gray-600">
+                {page.last_conversation_message ? (
+                    `"${page.last_conversation_message}"`
+                ) : (
+                    <span className="text-gray-500">Nenhuma mensagem recente</span>
+                )}
+            </div>
+        </td>
+
+        <td className="px-4 py-3">
+            {page.status === 'enabled' ? (
+                <div className="flex items-center gap-2 text-green-400 justify-center"><span className="h-2 w-2 rounded-full bg-green-500"></span>Ativo</div>
+            ) : (
+                <div className="flex items-center gap-2 text-red-400 justify-center"><span className="h-2 w-2 rounded-full bg-red-500"></span>Inativo</div>
+            )}
+        </td>
+
+        <td className="px-4 py-3 text-gray-200 text-center font-semibold">
+            {page.currentLeadCount}
+        </td>
+
+        <td className="px-4 py-3 text-right">
+            <button 
+                onClick={() => setSelectedPage(page)}
+                className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                title="Ver Detalhes"
+            >
+                <FileText size={18} className="text-blue-400" />
+            </button>
+        </td>
+    </tr>
+))}
+</tbody>
                         ))}
                         </tbody>
                     </table>
