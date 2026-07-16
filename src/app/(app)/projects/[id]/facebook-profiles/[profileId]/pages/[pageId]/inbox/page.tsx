@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'react-toastify'
 import { Loader2, Send, UserCheck, Bell, ArrowLeft } from 'lucide-react'
+import { AxiosError } from 'axios'
 import {
     useConversations,
     useMessages,
@@ -59,8 +60,9 @@ export default function InboxPage() {
                     setText('')
                     toast.success('Mensagem enviada como Agente Humano')
                 },
-                onError: (err: any) => {
-                    toast.error(err?.response?.data?.message ?? 'Erro ao enviar mensagem')
+                onError: (err: unknown) => {
+                    const axiosError = err as AxiosError<{message?: string}>
+                    toast.error(axiosError.response?.data?.message ?? 'Erro ao enviar mensagem')
                 },
             })
         } else {
@@ -69,8 +71,9 @@ export default function InboxPage() {
                     setText('')
                     toast.success('Mensagem utilitária enviada')
                 },
-                onError: (err: any) => {
-                    toast.error(err?.response?.data?.message ?? 'Erro ao enviar mensagem')
+                onError: (err: unknown) => {
+                    const axiosError = err as AxiosError<{message?: string}>
+                    toast.error(axiosError.response?.data?.message ?? 'Erro ao enviar mensagem')
                 },
             })
         }
@@ -87,7 +90,6 @@ export default function InboxPage() {
 
     return (
         <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
-            {/* ── Sidebar: lista de conversas ── */}
             <aside className="w-80 flex-shrink-0 border-r border-gray-800 flex flex-col">
                 <div className="p-4 border-b border-gray-800 flex items-center gap-3">
                     <button
@@ -147,7 +149,6 @@ export default function InboxPage() {
                 </div>
             </aside>
 
-            {/* ── Área principal: chat ── */}
             <main className="flex-1 flex flex-col min-w-0">
                 {!selectedLead ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
@@ -156,7 +157,6 @@ export default function InboxPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Header do chat */}
                         <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
                             <div className="w-9 h-9 rounded-full bg-blue-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
                                 {(selectedLead.firstName?.[0] ?? 'U').toUpperCase()}
@@ -166,12 +166,11 @@ export default function InboxPage() {
                                     {[selectedLead.firstName, selectedLead.lastName].filter(Boolean).join(' ') || 'Usuário'}
                                 </p>
                                 <p className="text-xs text-gray-400">
-                                    {selectedLead.canReply ? 'Dentro da janela de resposta' : 'Fora da janela de 24h — use Mensagem Utilitária'}
+                                    {selectedLead.canReply ? 'Dentro da janela de resposta' : 'Fora da janela de 24h'}
                                 </p>
                             </div>
                         </div>
 
-                        {/* Mensagens */}
                         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
                             {loadingMessages ? (
                                 <div className="flex justify-center items-center h-full">
@@ -208,9 +207,6 @@ export default function InboxPage() {
                                                         <UserCheck className="w-3 h-3" /> Agente Humano
                                                     </span>
                                                 )}
-                                                {isOutgoing && !isHuman && (
-                                                    <span className="text-xs text-blue-400">Bot</span>
-                                                )}
                                                 <span className="text-xs text-gray-500">{formatTime(msg.sent_at)}</span>
                                             </div>
                                         </div>
@@ -220,54 +216,33 @@ export default function InboxPage() {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        {/* Input de envio */}
                         <div className="px-6 py-4 border-t border-gray-800 space-y-3">
-                            {/* Seletor de modo */}
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setSendMode('human')}
                                     className={[
-                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                                        sendMode === 'human'
-                                            ? 'bg-green-700 text-white'
-                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700',
+                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold',
+                                        sendMode === 'human' ? 'bg-green-700 text-white' : 'bg-gray-800 text-gray-400',
                                     ].join(' ')}
                                 >
-                                    <UserCheck className="w-3.5 h-3.5" />
-                                    Agente Humano
+                                    <UserCheck className="w-3.5 h-3.5" /> Agente Humano
                                 </button>
                                 <button
                                     onClick={() => setSendMode('utility')}
                                     className={[
-                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                                        sendMode === 'utility'
-                                            ? 'bg-yellow-600 text-white'
-                                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700',
+                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold',
+                                        sendMode === 'utility' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400',
                                     ].join(' ')}
                                 >
-                                    <Bell className="w-3.5 h-3.5" />
-                                    Mensagem Utilitária
+                                    <Bell className="w-3.5 h-3.5" /> Utilitária
                                 </button>
                             </div>
 
-                            {/* Aviso contextual */}
-                            {sendMode === 'human' && (
-                                <p className="text-xs text-green-400 bg-green-900 bg-opacity-30 px-3 py-1.5 rounded-lg">
-                                    <strong>Human Agent:</strong> Use apenas para responder clientes que iniciaram contato nas últimas 7 dias. Requer permissão aprovada pela Meta.
-                                </p>
-                            )}
-                            {sendMode === 'utility' && (
-                                <p className="text-xs text-yellow-400 bg-yellow-900 bg-opacity-30 px-3 py-1.5 rounded-lg">
-                                    <strong>Mensagem Utilitária:</strong> Use apenas para atualizações de conta, confirmações ou avisos relevantes ao serviço. Não use para marketing.
-                                </p>
-                            )}
-
-                            {/* Campo de texto + botão */}
                             <div className="flex gap-2 items-end">
                                 <textarea
-                                    className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white resize-none focus:outline-none focus:border-blue-500 transition-colors"
+                                    className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white resize-none outline-none focus:border-blue-500"
                                     rows={2}
-                                    placeholder="Digite sua mensagem... (Enter para enviar)"
+                                    placeholder="Digite sua mensagem..."
                                     value={text}
                                     onChange={(e) => setText(e.target.value)}
                                     onKeyDown={handleKeyDown}
@@ -277,17 +252,11 @@ export default function InboxPage() {
                                     onClick={handleSend}
                                     disabled={isSending || !text.trim()}
                                     className={[
-                                        'p-3 rounded-xl transition-colors flex-shrink-0',
-                                        sendMode === 'human'
-                                            ? 'bg-green-700 hover:bg-green-600 disabled:opacity-40'
-                                            : 'bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40',
+                                        'p-3 rounded-xl',
+                                        sendMode === 'human' ? 'bg-green-700' : 'bg-yellow-600',
                                     ].join(' ')}
                                 >
-                                    {isSending ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <Send className="w-5 h-5" />
-                                    )}
+                                    {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                                 </button>
                             </div>
                         </div>
